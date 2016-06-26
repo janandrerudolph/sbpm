@@ -23,6 +23,7 @@ public class Edge
 	private State source;
 	private State target;
 	private TransitionType type;
+	//TODO fabian maybe you need some getter and setter for some new things?
 	
 //RAW attributes
 	private String targetRaw;

@@ -18,6 +18,7 @@ public class State extends Element
 	private boolean isAbstract;
 	private boolean isInitial;
 	private boolean isEndstate;
+	//TODO fabian maybe you need a getter and setter for the general abstract state?
 	
 //RAW attributes (they store the Strings while the Interpreter has not yet created the linked States or Edges)
 	private ArrayList<String> edgesRaw;

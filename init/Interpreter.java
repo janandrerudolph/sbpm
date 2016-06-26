@@ -313,7 +313,11 @@ public class Interpreter
 			case "TriggerTransition":
 				edge.setType(TransitionType.TRIGGER);
 				break;
-															
+				
+			//TODO fabian case succession-transition
+				
+			//TODO fabian cases receive-succession-transition etc.
+				
 			default:
 				//This should not happen
 				assert(false);
@@ -392,6 +396,8 @@ public class Interpreter
 				state.setType(StateType.RECIEVE);
 				state.setAbstract();
 				break;
+				
+			//TODO fabian case general abstract state
 																
 			default:
 				//This should not happen

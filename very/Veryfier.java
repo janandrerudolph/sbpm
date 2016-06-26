@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import enumeration.Log;
 import enumeration.LogType;
+import enumeration.VeryType;
 import structure.Actor;
 import structure.Edge;
 import structure.State;
@@ -68,6 +69,16 @@ public class Veryfier
 			}
 			return false;
 		}
+	}
+	
+	public void addVeryType (VeryType veryType)
+	{
+		//TODO fill a list
+	}
+	
+	public Iterator<String> getProblemIt()
+	{
+		return this.problems.iterator();
 	}
 	
 //private functions

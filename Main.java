@@ -57,11 +57,22 @@ public class Main
 			System.err.println("Could not copy log4j.properties into bin/ >>" + e.getMessage() + "<<");
 		}
 		
-		
+		//TODO fabian GUI the following "addLogTypes" shall be choosed by the user via the GUI:
 		Log.addLogType(LogType.ALGO_DEEP_EDGE);
 		Log.addLogType(LogType.ALGO_DEEP_STATE);
 		Log.addLogType(LogType.ALGO_PROBLEM);
 		Log.addLogType(LogType.ALGO_RECURSION);
+		Log.addLogType(LogType.DATA_TRIPLE);
+		Log.addLogType(LogType.DATA_SUBJECT);
+		Log.addLogType(LogType.DATA_CREATION);
+		Log.addLogType(LogType.DATA_CONNECTION);
+		Log.addLogType(LogType.DATA_DEEP_CREATION);
+		Log.addLogType(LogType.DATA_DEEP_CONNECTION);
+		
+		//TODO fabian GUI the user should be able to choose veryfication-types by "addVeryType" (nothing useful available yet)
+		
+		//TODO fabian GUI i think it would be nice, if the gui could print the "problems" if falsified (be aware of a nullpointer if verified)
+		
 		
 		//interpretation and analyzation of the data
 		String link1 = "data/BasicPASSOntology.owl";
