@@ -2,5 +2,7 @@ package enumeration;
 
 public enum TransitionType 
 {
-	RECIEVE, SEND, STANDARD, TRIGGER; //TODO fabian add nessecary types
+	RECEIVE, SEND, STANDARD, 
+	TRIGGER_RECEIVE, TRIGGER_SEND, TRIGGER, 
+	SUCCESSION_RECEIVE, SUCCESSION_SEND, SUCCESSION;
 }

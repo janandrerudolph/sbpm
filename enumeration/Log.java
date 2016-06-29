@@ -33,11 +33,21 @@ public class Log
 		}
 	}
 	
-	public static void finishLog()
+	public static File finishLog(File logDirectory)
 	{
+		String logPath = "";
+		try
+		{
+			logPath = logDirectory.getCanonicalPath();
+		}
+		catch (Exception e)
+		{
+			System.err.println("Could not save the log");
+		}
+		
 		DateFormat dateFormat = new SimpleDateFormat("dd.MM.yy_HH:mm:ss");
 		Calendar cal = Calendar.getInstance();
-		String name = dateFormat.format(cal.getTime()) + ".veryficationLog";
+		String name = logPath + "/" + dateFormat.format(cal.getTime()) + ".veryficationLog";
 		System.out.println(name);
 		File newFile = new File(logfile.getParent(), name);
 		try 
@@ -47,6 +57,8 @@ public class Log
 		catch (IOException e) {
 			System.err.println("Could not rename the logfile >>" + e.getMessage() + "<<");
 		}
+		
+		return newFile;
 	}
 	
 	public static void print(String log, LogType type)

@@ -1,5 +1,6 @@
 package init;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Iterator;
 import org.apache.jena.rdf.model.*;
@@ -26,8 +27,8 @@ public class Interpreter
 //attributes
 	
 	///Jena
-	private String linkToFile;
-	private Model model;
+	private ArrayList<File> files;
+	private ArrayList<Model> models;
 	
 	///bridge 1
 	private ArrayList<Statement> statements;
@@ -52,11 +53,11 @@ public class Interpreter
 	/**uses Java Apache API to read the RFD file
 	 * @param RFD file link which shall be read
 	 */
-	public Interpreter(String linkToFile)
+	public Interpreter(ArrayList<File> rdfFiles)
 	{
 		///Jena
-		this.linkToFile = linkToFile;
-		this.model = ModelFactory.createDefaultModel();
+		this.files = rdfFiles;
+		this.models = new ArrayList<Model>();
 		
 		///bridge 1
 		this.statements = new ArrayList<Statement>();
@@ -86,21 +87,30 @@ public class Interpreter
 	 */
 	public void calculate() throws Exception
 	{
-		try
+		Iterator<File> linkIt = this.files.iterator();
+		while (linkIt.hasNext()) 
 		{
-			model.read(this.linkToFile);
-		} 
-		catch (Exception e) 
-		{
-			throw new Exception("Could not read the content with Apache Jena >>" + e.getMessage() + "<<");
+			Model model = ModelFactory.createDefaultModel();
+			String link = linkIt.next().getCanonicalPath();
+			try
+			{
+				model.read(link);
+				this.models.add(model);
+				Log.println("Model added", LogType.DATA_CREATION);
+			} 
+			catch (Exception e) 
+			{
+				throw new Exception("Could not read the content with Apache Jena >>" + e.getMessage() + "<<");
+			}
+			
+			StmtIterator iter= model.listStatements();
+			while (iter.hasNext()) 
+			{
+			    Statement statement = iter.nextStatement();  // get next statement
+			    this.statements.add(statement);
+			}
 		}
 		
-		StmtIterator iter= model.listStatements();
-		while (iter.hasNext()) 
-		{
-		    Statement statement = iter.nextStatement();  // get next statement
-		    this.statements.add(statement);
-		}
 		
 		this.parseTriplesWithoutPrefixes();
 		Log.println("================================================================", LogType.DATA_TRIPLE);
@@ -127,42 +137,47 @@ public class Interpreter
 	 * @throws Exception 
 	 */
 	private void parseTriplesWithoutPrefixes()
-	{
-		Iterator<Statement> statementIterator = this.statements.iterator();
-		while (statementIterator.hasNext())
+	{	
+		Iterator<Model> modelIt = this.models.iterator();
+		while (modelIt.hasNext())
 		{
-			Statement statement = statementIterator.next();
-			String subject = statement.getSubject().toString();
-			String predicate = statement.getPredicate().toString();
-			String object = statement.getObject().toString();
-			
-			subject = model.shortForm(subject);
-			predicate = model.shortForm(predicate);
-			object = model.shortForm(object);
-			
-			if (subject.contains(":"))
+			Model model = modelIt.next();
+			Iterator<Statement> statementIterator = this.statements.iterator();
+			while (statementIterator.hasNext())
 			{
-				String[] parts = subject.split(":");
-				subject = parts[parts.length - 1];
-			}
-			if (predicate.contains(":"))
-			{
-				String[] parts = predicate.split(":");
-				predicate = parts[parts.length - 1];
-			}
-			if (object.contains(":"))
-			{
-				String[] parts = object.split(":");
-				object = parts[parts.length - 1];
-			}
+				Statement statement = statementIterator.next();
+				String subject = statement.getSubject().toString();
+				String predicate = statement.getPredicate().toString();
+				String object = statement.getObject().toString();
+				
+				subject = model.shortForm(subject);
+				predicate = model.shortForm(predicate);
+				object = model.shortForm(object);
+				
+				if (subject.contains(":"))
+				{
+					String[] parts = subject.split(":");
+					subject = parts[parts.length - 1];
+				}
+				if (predicate.contains(":"))
+				{
+					String[] parts = predicate.split(":");
+					predicate = parts[parts.length - 1];
+				}
+				if (object.contains(":"))
+				{
+					String[] parts = object.split(":");
+					object = parts[parts.length - 1];
+				}
 
-			if (statement.getObject() instanceof Resource)
-			{
-				this.triples.add(new Triple(subject, predicate, object, true));
-			}
-			else
-			{
-				this.triples.add(new Triple(subject, predicate, object, false));
+				if (statement.getObject() instanceof Resource)
+				{
+					this.triples.add(new Triple(subject, predicate, object, true));
+				}
+				else
+				{
+					this.triples.add(new Triple(subject, predicate, object, false));
+				}
 			}
 		}
 	}
@@ -231,7 +246,7 @@ public class Interpreter
 			}
 			else
 			{
-				//TODO what about Layer, AbstractLayer, PASSProcessModel, Behavior, Class(, MessageSpec)?
+				//Layer, AbstractLayer, PASSProcessModel, Behavior, Class(, MessageSpec)
 			}
 		}
 	}
@@ -250,7 +265,7 @@ public class Interpreter
 		else
 		{
 			edge = new Edge(subject.getSubjectName(), "has " + subject.getObjectsDependingOnPredicate("hasModelComponentID").size()
-					+ " Component IDs" + ">>warning<<");//TODO might this be a mistake? if so, we can throw an Error
+					+ " Component IDs" + ">>warning<<");
 		}
 		
 		if (subject.getObjectsDependingOnPredicate("hasSourceState").size() == 1)
@@ -259,7 +274,7 @@ public class Interpreter
 		}
 		else
 		{
-			//TODO can we assume this never happens? or might it be empty if there is a placeholder pointing to a state?
+			Log.println(">>warning<< " + edge.getComponentID() + " has no SourceState", LogType.DATA_CREATION);
 		}
 		
 		if (subject.getObjectsDependingOnPredicate("hasTargetState").size() == 1)
@@ -307,16 +322,32 @@ public class Interpreter
 				break;
 				
 			case "ReceiveTransition":
-				edge.setType(TransitionType.RECIEVE);
+				edge.setType(TransitionType.RECEIVE);
 				break;
 				
 			case "TriggerTransition":
 				edge.setType(TransitionType.TRIGGER);
 				break;
 				
-			//TODO fabian case succession-transition
+			case "TriggerSendTransition":
+				edge.setType(TransitionType.TRIGGER_SEND);
+				break;
 				
-			//TODO fabian cases receive-succession-transition etc.
+			case "TriggerReceiveTransition":
+				edge.setType(TransitionType.TRIGGER_RECEIVE);
+				break;
+				
+			case "SuccessionTransition":
+				edge.setType(TransitionType.SUCCESSION);
+				break;
+				
+			case "SuccessionSendTransition":
+				edge.setType(TransitionType.SUCCESSION_SEND);
+				break;
+				
+			case "SuccessionReceiveTransition":
+				edge.setType(TransitionType.SUCCESSION_RECEIVE);
+				break;
 				
 			default:
 				//This should not happen
@@ -362,6 +393,10 @@ public class Interpreter
 				//do nothing
 				break;
 			
+			case "GeneralAbstractState":
+				state.setType(StateType.GENERAL);
+				break;
+				
 			case "FunctionState":
 				state.setType(StateType.FUNCTION);
 				break;

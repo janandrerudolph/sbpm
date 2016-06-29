@@ -10,6 +10,8 @@ import structure.Edge;
 import structure.State;
 import structure.Message;
 
+
+
 public class Veryfier 
 {
 //attributes
@@ -97,46 +99,54 @@ public class Veryfier
 		boolean checkEdgesAbstract = true;
 		boolean checkEdgesImp = true;
 		boolean stateCompRes = this.compareState(impState, abstractState);
-		if (!impState.getIsEndstate()) //TODO or already visited - to avoid getting stuck loops
+		if (abstractState != null)
 		{
-			//try to find the correct implementation for each abstract edge - and the other way round. If found, go deeper recursively
-			Iterator<Edge> impEdgesIt = impState.getEdgeIt();
-			while (impEdgesIt.hasNext())
-			//for each edge of imp
+			if (!impState.getIsEndstate()) //TODO or already visited - to avoid getting stuck loops
 			{
-				Edge impEdge = impEdgesIt.next();
-				boolean checkEdgesInnerLoop = false;
+				//try to find the correct implementation for each abstract edge - and the other way round. If found, go deeper recursively
+				Iterator<Edge> impEdgesIt = impState.getEdgeIt();
+				while (impEdgesIt.hasNext())
+				//for each edge of imp
+				{
+					Edge impEdge = impEdgesIt.next();
+					boolean checkEdgesInnerLoop = false;
+					Iterator<Edge> abstractEdgesIt = abstractState.getEdgeIt();
+					while (abstractEdgesIt.hasNext())
+					//for each edge of abstract
+					{
+						Edge abstractEdge = abstractEdgesIt.next();
+						if (this.compareEdges(impEdge, abstractEdge))
+						{
+							checkEdgesInnerLoop = true;
+							recursiveImp &= this.recursiveTraversion(impEdge.getTarget(), abstractEdge.getTarget());
+						}
+					}
+					checkEdgesImp &= checkEdgesInnerLoop;
+				}
+				
 				Iterator<Edge> abstractEdgesIt = abstractState.getEdgeIt();
-				while (abstractEdgesIt.hasNext())
-				//for each edge of abstract
+				while (abstractEdgesIt.hasNext()) 
 				{
 					Edge abstractEdge = abstractEdgesIt.next();
-					if (this.compareEdges(impEdge, abstractEdge))
-					{
-						checkEdgesInnerLoop = true;
-						recursiveImp &= this.recursiveTraversion(impEdge.getTarget(), abstractEdge.getTarget());
+					boolean checkEdgesInnerLoop = false;
+					Iterator<Edge> ImpEdgesIt = impState.getEdgeIt();
+					while (ImpEdgesIt.hasNext()) 
+					{ 
+						Edge impEdge = ImpEdgesIt.next();
+						if (this.compareEdges(impEdge, abstractEdge))
+						{
+							checkEdgesInnerLoop = true;
+							recursiveAbstract &= this.recursiveTraversion(impEdge.getTarget(), abstractEdge.getTarget());
+						}	
 					}
+					checkEdgesAbstract &= checkEdgesInnerLoop;
 				}
-				checkEdgesImp &= checkEdgesInnerLoop;
 			}
-			
-			Iterator<Edge> abstractEdgesIt = abstractState.getEdgeIt();
-			while (abstractEdgesIt.hasNext()) 
-			{
-				Edge abstractEdge = abstractEdgesIt.next();
-				boolean checkEdgesInnerLoop = false;
-				Iterator<Edge> ImpEdgesIt = impState.getEdgeIt();
-				while (ImpEdgesIt.hasNext()) 
-				{ 
-					Edge impEdge = ImpEdgesIt.next();
-					if (this.compareEdges(impEdge, abstractEdge))
-					{
-						checkEdgesInnerLoop = true;
-						recursiveAbstract &= this.recursiveTraversion(impEdge.getTarget(), abstractEdge.getTarget());
-					}	
-				}
-				checkEdgesAbstract &= checkEdgesInnerLoop;
-			}
+		}
+		else
+		//abstractState is null
+		{
+			//TODO recursion for all implemented edges
 		}
 		
 		Log.println("veryfication of " + impState.getComponentID() + ", stateComp: " + stateCompRes + ", recAbs: " 
