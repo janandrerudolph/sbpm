@@ -10,6 +10,8 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 
+
+
 public class Log
 {
 //static attributes
@@ -35,6 +37,7 @@ public class Log
 	
 	public static File finishLog(File logDirectory)
 	{
+		filter = new ArrayList<LogType>();
 		String logPath = "";
 		try
 		{
@@ -42,6 +45,7 @@ public class Log
 		}
 		catch (Exception e)
 		{
+			logfile.delete();
 			System.err.println("Could not save the log");
 		}
 		
@@ -97,6 +101,7 @@ public class Log
 	{
 		if (!filter.contains(logType))
 		{
+			System.out.println("added");
 			Log.filter.add(logType);
 		}
 	}

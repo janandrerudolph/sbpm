@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import enumeration.Log;
 import enumeration.LogType;
-import enumeration.VeryType;
+import enumeration.VeriType;
 import structure.Actor;
 import structure.Edge;
 import structure.State;
@@ -15,6 +15,7 @@ import structure.Message;
 public class Veryfier 
 {
 //attributes
+	private ArrayList<VeriType> veriTypes;
 	private ArrayList<String> problems;
 	
 
@@ -22,6 +23,7 @@ public class Veryfier
 	public Veryfier ()
 	{
 		this.problems = new ArrayList<String>();
+		this.veriTypes = new ArrayList<VeriType>();
 	}
 
 
@@ -34,15 +36,18 @@ public class Veryfier
 			Actor actor = actorsIt.next();
 			if (!actor.getIsAbstract())
 			{
-				Iterator<Actor> abstractActorIt = actor.getImplementedAbstractActorsIt();
-				while (abstractActorIt.hasNext()) 
+				if (this.veriTypes.contains(VeriType.VERI_RECURSIVE))
 				{
-					//this means the intersection of rules of all implemented abstract actors must be fulfilled (stronger statement than the combined set!)
-					Actor abstractActor = abstractActorIt.next();
-					Log.println("Initializing semi parallel traversion: " + actor.getComponentID() + " <> " + abstractActor.getComponentID(), LogType.ALGO_RECURSION);
-					if (!this.recursiveTraversion(actor.getInitialState(), abstractActor.getInitialState()))//TODO maybe the "problem" could be bit more specific?
+					Iterator<Actor> abstractActorIt = actor.getImplementedAbstractActorsIt();
+					while (abstractActorIt.hasNext()) 
 					{
-						problems.add("Could not match actor " + actor.getComponentID() + " with abstract actor " + abstractActor.getComponentID() + " in the semi parallel traversion.");
+						//this means the intersection of rules of all implemented abstract actors must be fulfilled (stronger statement than the combined set!)
+						Actor abstractActor = abstractActorIt.next();
+						Log.println("Initializing semi parallel traversion: " + actor.getComponentID() + " <> " + abstractActor.getComponentID(), LogType.ALGO_RECURSION);
+						if (!this.recursiveTraversion(actor.getInitialState(), abstractActor.getInitialState()))//TODO maybe the "problem" could be bit more specific?
+						{
+							problems.add("Could not match actor " + actor.getComponentID() + " with abstract actor " + abstractActor.getComponentID() + " in the semi parallel traversion.");
+						}
 					}
 				}
 				//TODO more for implemented actors?
@@ -73,9 +78,9 @@ public class Veryfier
 		}
 	}
 	
-	public void addVeryType (VeryType veryType)
+	public void addVeryType (VeriType veryType)
 	{
-		//TODO fill a list
+		this.veriTypes.add(veryType);
 	}
 	
 	public Iterator<String> getProblemIt()
@@ -157,12 +162,20 @@ public class Veryfier
 	
 	private void implementationVery(Actor actor, ArrayList<Actor> actors)
 	{
+		if (!this.veriTypes.contains(VeriType.VERI_IMP))
+		{
+			return;
+		}
 		assert(actor.getIsAbstract());
-		//TODO
+		//TODO check if every abstract state has an implementation
 	}
 	
 	private boolean compareState(State impState, State abstractState)
 	{
+		if (!this.veriTypes.contains(VeriType.VERI_COMP_STATES))
+		{
+			return true;
+		}
 		if (abstractState == null)
 		{
 			Log.println("State implementation true: " 
@@ -189,6 +202,10 @@ public class Veryfier
 	
 	private boolean compareEdges(Edge impEdge, Edge abstractEdge)
 	{
+		if (!this.veriTypes.contains(VeriType.VERI_COMP_EDGES))
+		{
+			return true;
+		}
 		if (!this.compareState(impEdge.getTarget(), abstractEdge.getTarget()))
 		{
 			Log.println("Edge comparison false (targets not matching): " 

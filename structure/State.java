@@ -8,7 +8,7 @@ import enumeration.LogType;
 
 
 //TODO expand functionality: GeneralAbstractState, PlaceHolder
-public class State extends Element 
+public class State
 {
 //attributes
 	private String subjectName;

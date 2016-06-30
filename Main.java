@@ -16,6 +16,7 @@ import java.util.Calendar;
 import javax.swing.JFrame;
 import enumeration.Log;
 import enumeration.LogType;
+import enumeration.VeriType;
 import init.Interpreter;
 import javafx.application.Application;
 import javafx.event.ActionEvent;
@@ -26,11 +27,14 @@ import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.Label;
 import javafx.scene.layout.Border;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.BorderStroke;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
@@ -54,6 +58,10 @@ public class Main  extends Application
 //attributes
 	BorderPane root;
 	
+	Button buttonChooseLog;
+	Button buttonChooseRdf;
+	Button startVeri;
+	
 	CheckBox checkRec;
 	CheckBox checkImp;
 	CheckBox checkCompEdges;
@@ -70,6 +78,7 @@ public class Main  extends Application
 	CheckBox logDataDeepCreation;
 	CheckBox logDataDeepConnection;
 	
+	Label label;
 	ArrayList<File> rdfFiles;
 	File logDirectory;
 	
@@ -96,24 +105,13 @@ public class Main  extends Application
 	 * @throws IOException
 	 */
 	@SuppressWarnings("resource")
-	private static void copyPropertyFileForJena() throws IOException 
+	public static void copyPropertyFileForJena() throws IOException 
 	{
-		//assume that eclipse is used if it is inside a bin-folder
-		Boolean eclipse = false;
-		try 
-		{
-			String dir = new File(".").getCanonicalPath();
-			eclipse = new File(dir + "/.classpath").exists();
-		}
-		catch (IOException e) 
-		{
-			throw e;
-		}
 		
-		if (eclipse)
+		if (new File(".classpath").isFile())
 		{
-			File in = new File(new java.io.File( "." ).getCanonicalPath() + "/log4j.properties");
-	        File out = new File(new java.io.File( "." ).getCanonicalPath() + "/bin/log4j.properties");
+			File in = new File("log4j.properties");
+	        File out = new File("bin/log4j.properties");
 	        FileChannel inChannel = null;
 	        FileChannel outChannel = null;
 	        try 
@@ -136,9 +134,7 @@ public class Main  extends Application
 	                    outChannel.close();
 	            } 
 	            catch (IOException e) 
-	            {
-	            	throw e;
-	            }
+	            {}
 	        }
 		}
     }
@@ -154,9 +150,9 @@ public class Main  extends Application
 		root.setTop(addUpperHBox());
 		root.setLeft(addLeftVBox());
 		root.setRight(addRightVBox());
-		root.setBottom(addLowerHBox());
+		root.setBottom(addLowerVBox());
 		
-        primaryStage.setScene(new Scene(root, 800, 600));
+        primaryStage.setScene(new Scene(root));
         primaryStage.show();
 	}
 
@@ -166,7 +162,7 @@ public class Main  extends Application
 	    vbox.setPadding(new Insets(10));
 	    vbox.setSpacing(8);
 
-	    Button buttonChooseRdf = new Button("Choose RDF File(s)");
+	    buttonChooseRdf = new Button("Choose RDF File(s)");
 	    buttonChooseRdf.setPrefSize(200, 20);
 	    buttonChooseRdf.setOnAction(new EventHandler<ActionEvent>() 
 	    {
@@ -208,6 +204,12 @@ public class Main  extends Application
 		{
 			System.err.println("The Filechooser could not open files.");
 		}
+		if (!rdfFiles.isEmpty())
+		{
+			buttonChooseRdf.setText("Change RDF File(s)");
+			startVeri.setText("Please start the verification :)");
+			label.setText("Please start the verification.");
+		}
 	}
 	
 	private Node addRightVBox() 
@@ -216,7 +218,7 @@ public class Main  extends Application
 	    vbox.setPadding(new Insets(10));
 	    vbox.setSpacing(8);
 
-	    Button buttonChooseLog = new Button("Choose location for Log");
+	    buttonChooseLog = new Button("Choose location for Log");
 	    buttonChooseLog.setPrefSize(200, 20);
 	    buttonChooseLog.setOnAction(new EventHandler<ActionEvent>() 
 	    {
@@ -270,6 +272,10 @@ public class Main  extends Application
 		DirectoryChooser chooser = new DirectoryChooser();
 		chooser.setTitle("Please choose the location, where we can store the logbook. Ahoi.");
 		logDirectory = chooser.showDialog(root.getScene().getWindow());
+		if (logDirectory.isDirectory())
+		{
+			buttonChooseLog.setText("Change location for Log");
+		}
 	}
 	
 
@@ -280,21 +286,24 @@ public class Main  extends Application
 	    hbox.setSpacing(10);
 	    hbox.setAlignment(Pos.BASELINE_CENTER);
 	    
-	    Text description = new Text("This program deos fancy shit with your shitty fancies.");
+	    Text description = new Text("This application verifies an implementation of an abstract subject-oriented business process model. \n"
+	    		+ "On th left hand side, please choose your RDF-XML files and select the verification properties. \n"
+	    		+ "On the right hand side, please choose the repository to save the logfile and select its properties. \n"
+	    		+ "If you do not need the logfile, just don't choose a location ;)");
 	    
 	    hbox.getChildren().addAll(description);
 		return hbox;
 	}
 	
 	
-	private HBox addLowerHBox() 
+	private VBox addLowerVBox() 
 	{
-		HBox hbox = new HBox();
+		VBox hbox = new VBox();
 	    hbox.setPadding(new Insets(15, 12, 15, 12));
-	    hbox.setSpacing(10);
+	    hbox.setSpacing(30);
 	    hbox.setAlignment(Pos.BASELINE_CENTER);
 	    
-	    Button startVeri = new Button("Please start the verification :)");
+	    startVeri = new Button("Provide a RDF file, please.");
 	    startVeri.setPrefSize(600, 50);
 	    startVeri.setFont(Font.font("Arial", FontWeight.BOLD, 32));
 	    startVeri.setOnAction(new EventHandler<ActionEvent>() 
@@ -305,7 +314,13 @@ public class Main  extends Application
 	        }
 	    });
 	    
-	    hbox.getChildren().addAll(startVeri);
+	    label = new Label("Please choose a file.");
+	    label.setPrefSize(220, 20);
+	    label.setStyle("-fx-border-color: dimgray; -fx-border-radius: 3;-fx-border-width: 2; -fx-background-color: darkgray; -fx-background-radius: 3;");
+	    label.setAlignment(Pos.BASELINE_CENTER);
+	    label.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+	    
+	    hbox.getChildren().addAll(startVeri, label);
 		return hbox;
 	}
 
@@ -357,7 +372,24 @@ public class Main  extends Application
 			}
 			
 			Interpreter interpreter = new Interpreter(rdfFiles);
-			Veryfier veryfier = new Veryfier();
+			Veryfier verifier = new Veryfier();
+			
+			if(checkRec.isSelected())
+			{
+				verifier.addVeryType(VeriType.VERI_RECURSIVE);
+			}
+			if(checkImp.isSelected())
+			{
+				verifier.addVeryType(VeriType.VERI_IMP);
+			}
+			if(checkCompEdges.isSelected())
+			{
+				verifier.addVeryType(VeriType.VERI_COMP_EDGES);
+			}
+			if(checkCompStates.isSelected())
+			{
+				verifier.addVeryType(VeriType.VERI_COMP_STATES);
+			}
 			
 			try 
 			{
@@ -368,13 +400,17 @@ public class Main  extends Application
 				System.err.println("Could not calculate >>" + e.getMessage() + "<<");
 				return;
 			}
-			if (veryfier.verifyImplementation(interpreter.getActors()))
+			if (verifier.verifyImplementation(interpreter.getActors()))
 			{
 				System.out.println("Implementation veryfied.");
+				label.setText("Implementation veryfied.");
+				label.setStyle("-fx-border-color: green; -fx-border-radius: 3; -fx-border-width: 2; -fx-background-color: lightgreen; -fx-background-radius: 3;");
 			}
 			else
 			{
 				System.out.println("Implementation falsified.");
+				label.setText("Implementation falsified.");
+				label.setStyle("-fx-border-color: red; -fx-border-radius: 3; -fx-border-width: 2; -fx-background-color: lightcoral; -fx-background-radius: 3;");
 			}
 			
 			File log = Log.finishLog(logDirectory);
@@ -389,7 +425,10 @@ public class Main  extends Application
 				System.err.println("Could not show the LogFile");
 			}
 			
-			getHostServices().showDocument(logPath);
+			if (log.isFile())
+			{
+				getHostServices().showDocument(logPath);
+			}
 		}
 	}
 }
