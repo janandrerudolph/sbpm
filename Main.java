@@ -1,4 +1,5 @@
 import java.awt.Desktop;
+import java.awt.Dimension;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -13,7 +14,18 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.SwingUtilities;
+import javafx.embed.swing.SwingNode;
+import edu.uci.ics.jung.algorithms.layout.CircleLayout;
+import edu.uci.ics.jung.algorithms.layout.Layout;
+import edu.uci.ics.jung.graph.DirectedSparseMultigraph;
+import edu.uci.ics.jung.graph.Graph;
+import edu.uci.ics.jung.graph.SparseMultigraph;
+import edu.uci.ics.jung.graph.util.EdgeType;
+import edu.uci.ics.jung.samples.SimpleGraphDraw;
+import edu.uci.ics.jung.visualization.BasicVisualizationServer;
 import enumeration.Log;
 import enumeration.LogType;
 import enumeration.VeriType;
@@ -55,6 +67,10 @@ import very.Veryfier;
 @SuppressWarnings("unused")
 public class Main  extends Application
 {
+//constructors
+	public Main() {}
+	
+	
 //attributes
 	BorderPane root;
 	
@@ -143,8 +159,6 @@ public class Main  extends Application
 	public void start(Stage primaryStage) throws Exception 
 	{
 		primaryStage.setTitle("Verification of implementations with abstract layered s-bpm");
-		
-		//create button
 		
 		root = new BorderPane();
 		root.setTop(addUpperHBox());
@@ -315,12 +329,42 @@ public class Main  extends Application
 	    });
 	    
 	    label = new Label("Please choose a file.");
-	    label.setPrefSize(220, 20);
+	    label.setPrefHeight(20);
 	    label.setStyle("-fx-border-color: dimgray; -fx-border-radius: 3;-fx-border-width: 2; -fx-background-color: darkgray; -fx-background-radius: 3;");
 	    label.setAlignment(Pos.BASELINE_CENTER);
 	    label.setFont(Font.font("Arial", FontWeight.BOLD, 16));
 	    
-	    hbox.getChildren().addAll(startVeri, label);
+	    
+	    
+	  //test
+	  		BorderPane swingFX = new BorderPane();
+	  		Graph<Integer, String> g = new SparseMultigraph<Integer, String>();
+	  		g.addVertex(1);
+	  		g.addVertex(2);
+	  		g.addVertex(3);
+	  		g.addVertex(4);
+	  		g.addEdge("1-2", 1, 2, EdgeType.DIRECTED);
+	  		g.addEdge("2-1", 2, 1, EdgeType.DIRECTED);
+	  		g.addEdge("2-3", 2, 3, EdgeType.DIRECTED);
+	  		Layout<Integer, String> graphLayout = new CircleLayout<Integer, String>(g);
+	  		graphLayout.setSize(new Dimension(300, 300));
+	  		BasicVisualizationServer<Integer, String> vs = new BasicVisualizationServer<>(graphLayout);
+	  		vs.setPreferredSize(new Dimension(350, 350));
+	  		
+	  		final SwingNode swingNode = new SwingNode();
+	  		
+	  		javax.swing.SwingUtilities.invokeLater(new Runnable() 
+	  		{
+	              @Override
+	              public void run() 
+	              {
+	                  swingNode.setContent(new JButton("Click me!"));
+	              }
+	          });
+	    
+	    
+	    
+	    hbox.getChildren().addAll(startVeri, label, swingNode);
 		return hbox;
 	}
 
