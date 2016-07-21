@@ -1,5 +1,9 @@
+import java.awt.BasicStroke;
+import java.awt.Color;
 import java.awt.Desktop;
 import java.awt.Dimension;
+import java.awt.Paint;
+import java.awt.Stroke;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -14,20 +18,32 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Iterator;
+
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
+
+import org.apache.commons.collections15.Transformer;
+
 import javafx.embed.swing.SwingNode;
+import edu.uci.ics.jung.algorithms.layout.BalloonLayout;
 import edu.uci.ics.jung.algorithms.layout.CircleLayout;
+import edu.uci.ics.jung.algorithms.layout.FRLayout;
 import edu.uci.ics.jung.algorithms.layout.Layout;
+import edu.uci.ics.jung.algorithms.layout.RadialTreeLayout;
+import edu.uci.ics.jung.algorithms.layout.TreeLayout;
 import edu.uci.ics.jung.graph.DirectedSparseMultigraph;
 import edu.uci.ics.jung.graph.Graph;
 import edu.uci.ics.jung.graph.SparseMultigraph;
 import edu.uci.ics.jung.graph.util.EdgeType;
 import edu.uci.ics.jung.samples.SimpleGraphDraw;
 import edu.uci.ics.jung.visualization.BasicVisualizationServer;
+import edu.uci.ics.jung.visualization.decorators.ToStringLabeller;
+import edu.uci.ics.jung.visualization.renderers.Renderer.VertexLabel.Position;
 import enumeration.Log;
 import enumeration.LogType;
+import enumeration.StateType;
 import enumeration.VeriType;
 import init.Interpreter;
 import javafx.application.Application;
@@ -46,7 +62,6 @@ import javafx.scene.layout.BorderStroke;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
-import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
@@ -54,7 +69,20 @@ import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Stage;
+import structure.Actor;
+import structure.Edge;
+import structure.State;
 import very.Veryfier;
+
+
+
+
+
+//TODO have a look at jgrapht.org
+//TODO maybe one could use jung2 or jgrapht in stead of our structure?
+
+
+
 
 
 /**
@@ -98,6 +126,8 @@ public class Main  extends Application
 	ArrayList<File> rdfFiles;
 	File logDirectory;
 	
+	
+//functions	
 	/**
 	 * @param args not used
 	 */
@@ -334,40 +364,119 @@ public class Main  extends Application
 	    label.setAlignment(Pos.BASELINE_CENTER);
 	    label.setFont(Font.font("Arial", FontWeight.BOLD, 16));
 	    
-	    
-	    
-	  //test
-	  		BorderPane swingFX = new BorderPane();
-	  		Graph<Integer, String> g = new SparseMultigraph<Integer, String>();
-	  		g.addVertex(1);
-	  		g.addVertex(2);
-	  		g.addVertex(3);
-	  		g.addVertex(4);
-	  		g.addEdge("1-2", 1, 2, EdgeType.DIRECTED);
-	  		g.addEdge("2-1", 2, 1, EdgeType.DIRECTED);
-	  		g.addEdge("2-3", 2, 3, EdgeType.DIRECTED);
-	  		Layout<Integer, String> graphLayout = new CircleLayout<Integer, String>(g);
-	  		graphLayout.setSize(new Dimension(300, 300));
-	  		BasicVisualizationServer<Integer, String> vs = new BasicVisualizationServer<>(graphLayout);
-	  		vs.setPreferredSize(new Dimension(350, 350));
-	  		
-	  		final SwingNode swingNode = new SwingNode();
-	  		
-	  		javax.swing.SwingUtilities.invokeLater(new Runnable() 
-	  		{
-	              @Override
-	              public void run() 
-	              {
-	                  swingNode.setContent(new JButton("Click me!"));
-	              }
-	          });
-	    
-	    
-	    
-	    hbox.getChildren().addAll(startVeri, label, swingNode);
+	    hbox.getChildren().addAll(startVeri, label);
 		return hbox;
 	}
 
+	private void openDiagrams(ArrayList<Actor> actors) 
+	{
+		Iterator<Actor> actorIt = actors.iterator();
+		while (actorIt.hasNext()) 
+		{
+			Actor actor = actorIt.next();
+			
+			Graph<State, Edge> graph = new SparseMultigraph<State, Edge>();
+			
+			
+			Iterator<State> statesIt = actor.getInternStateIt();
+			while (statesIt.hasNext()) 
+			{
+				State state = statesIt.next();
+				
+				graph.addVertex(state);
+				//TODO configure
+				
+				//FIXME HACK (only edges originating in a non-placeholder-state)
+				Iterator<Edge> edgesIt = state.getEdgeIt();
+				while (edgesIt.hasNext()) 
+				{
+					Edge edge = edgesIt.next();
+					if (edge.getTarget() == null)
+					{
+						graph.addEdge(edge, edge.getSource(), new State(null, null), EdgeType.DIRECTED);
+					}
+					else
+					{
+						graph.addEdge(edge, edge.getSource(), edge.getTarget(), EdgeType.DIRECTED);
+					}
+				}
+			}
+			
+			Layout<State, Edge> graphLayout = new FRLayout<State, Edge>(graph);
+			graphLayout.setSize(new Dimension(200 + actor.size() * 100, actor.size() * 50));
+			BasicVisualizationServer<State, Edge> vs = new BasicVisualizationServer<>(graphLayout);
+      		
+            // Setup up a new vertex to paint transformer...
+      		
+            Transformer<State,Paint> vertexPaint = new Transformer<State,Paint>() 
+            {
+				@Override
+				public Paint transform(State state) 
+				{
+					if (state.getType() == null)
+					{
+						return Color.WHITE;
+					}
+					else
+					{
+						switch (state.getType())
+						{
+						case FUNCTION:
+							return Color.BLUE;
+						case GENERAL:
+							return Color.GRAY;
+						case RECIEVE:
+							return Color.ORANGE;
+						case SEND:
+							return Color.GREEN;
+						default:
+							return Color.RED;
+						}
+					}
+				}
+            };  
+            // Set up a new stroke Transformer for the edges
+            float dash[] = {10.0f};
+            //TODO use: new BasicStroke(1.0f, BasicStroke.CAP_SQUARE,BasicStroke.JOIN_BEVEL, 10.0f, dash, 0.0f);
+            final Stroke edgeStroke = new BasicStroke();
+            
+            Transformer<Edge, Stroke> edgeStrokeTrans = new Transformer<Edge, Stroke>() 
+            {
+				@Override
+				public Stroke transform(Edge arg0) 
+				{
+					return edgeStroke;
+				}
+            };
+            vs.getRenderContext().setVertexFillPaintTransformer(vertexPaint);
+            vs.getRenderContext().setEdgeStrokeTransformer(edgeStrokeTrans);
+            vs.getRenderContext().setVertexLabelTransformer(new ToStringLabeller<State>());
+            //vs.getRenderContext().setEdgeLabelTransformer(new ToStringLabeller<Edge>());
+            vs.getRenderer().getVertexLabelRenderer().setPosition(Position.SE);
+      		vs.setPreferredSize(new Dimension(100 + 200 + actor.size() * 100, 50 + actor.size() * 50));
+      		
+      		final SwingNode swingNode = new SwingNode();
+      		
+      		javax.swing.SwingUtilities.invokeLater(new Runnable() 
+      		{
+                  @Override
+                  public void run() 
+                  {
+                      swingNode.setContent(vs);
+                  }
+              });
+    	    
+      		BorderPane pane = new BorderPane();
+      		pane.setTop(swingNode);
+      		pane.setPrefSize(100 + 200 + actor.size() * 100, 50 + actor.size() * 50);
+      		
+    	    Stage diagram = new Stage();
+    	    diagram.setTitle(actor.getSubjectName());
+    	    diagram.setScene(new Scene(pane));
+    	    diagram.show();
+		}
+	}
+	
 	protected void startVerification() 
 	{
 		if (rdfFiles != null)
@@ -473,6 +582,8 @@ public class Main  extends Application
 			{
 				getHostServices().showDocument(logPath);
 			}
+			
+      		openDiagrams(interpreter.getActors());
 		}
 	}
 }

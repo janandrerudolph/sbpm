@@ -48,6 +48,11 @@ public class Actor
 	
 	
 //functions	
+	public int size()
+	{
+		return this.internStates.size();
+	}
+	
 	public String getSubjectName()
 	{
 		return this.subjectName;

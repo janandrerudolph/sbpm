@@ -159,4 +159,15 @@ public class State
 	{
 		this.isEndstate = true;
 	}
+	
+	
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 * this function is used by JUNG2
+	 */
+	@Override
+	public String toString() 
+	{
+		return this.getComponentID();
+	}
 }
